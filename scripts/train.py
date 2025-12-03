@@ -27,7 +27,7 @@ Usage:
     # With LLM-as-a-Judge evaluation
     python train.py --eval-with-llm --openai-key YOUR_KEY
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

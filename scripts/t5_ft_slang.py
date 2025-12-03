@@ -20,7 +20,7 @@ Features:
 Usage:
     python t5_ft_slang.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

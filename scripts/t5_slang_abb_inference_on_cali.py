@@ -7,7 +7,7 @@ to interpret California vanity plates.
 Usage:
     python t5_slang_abb_inference_on_cali.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

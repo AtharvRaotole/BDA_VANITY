@@ -16,7 +16,7 @@ Output: data/cali_v2.csv
 Usage:
     python data_gen.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

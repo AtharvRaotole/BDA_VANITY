@@ -13,7 +13,7 @@ Output: data/slang_abb.csv
 Usage:
     python slang_abb_data.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

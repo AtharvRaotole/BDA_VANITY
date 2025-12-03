@@ -7,7 +7,7 @@ This module provides all hyperparameters, paths, and settings used across
 the training and inference scripts. Modify values here to change behavior
 across all scripts.
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

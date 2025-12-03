@@ -9,7 +9,7 @@ for vanity plates in a test dataset.
 Usage:
     python t5_inference.py [--model_path PATH] [--input_csv PATH]
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

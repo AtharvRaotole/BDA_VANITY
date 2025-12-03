@@ -17,7 +17,7 @@ Output: data/cali_slang_abb.csv
 Usage:
     python cali_slang_abb.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

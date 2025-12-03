@@ -25,16 +25,16 @@ cd /home/your_username/  # or your scratch space
 
 # Clone or upload the project
 # Option A: Clone from git
-git clone <your-repo-url> dsf_project
+git clone https://github.com/AtharvRaotole/BDA_VANITY.git
 
 # Option B: Upload via scp (from your Mac)
-# scp -r /Users/atharvraotole/Downloads/dsf_project your_username@cluster.edu:/home/your_username/
+# scp -r /Users/atharvraotole/Downloads/BDA_VANITY your_username@cluster.edu:/home/your_username/
 ```
 
 ### 1.2 Create Virtual Environment
 
 ```bash
-cd dsf_project
+cd BDA_VANITY
 
 # Load Python module (cluster-specific)
 module load python/3.10  # or python/3.9, check with: module avail python
@@ -82,7 +82,7 @@ module load python/3.10
 module load cuda/11.8  # or appropriate CUDA version
 
 # Navigate to project
-cd /home/$USER/dsf_project
+cd /home/$USER/BDA_VANITY
 
 # Activate environment
 source venv/bin/activate
@@ -151,7 +151,7 @@ echo "Starting evaluation on $(hostname) at $(date)"
 # Load modules
 module load python/3.10
 
-cd /home/$USER/dsf_project
+cd /home/$USER/BDA_VANITY
 source venv/bin/activate
 
 # Find latest predictions file
@@ -276,7 +276,7 @@ ls -la model_checkpoints/
 After successful training, you'll have:
 
 ```
-dsf_project/
+BDA_VANITY/
 ├── model_checkpoints/
 │   └── best_flan_t5_base_20241202_143022/  # Your trained model
 ├── outputs/

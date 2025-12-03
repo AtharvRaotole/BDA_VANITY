@@ -14,7 +14,7 @@ Usage:
     python train_modern.py --model flan-t5-small --epochs 10
     python train_modern.py --model bart-base
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

@@ -18,7 +18,7 @@ This project develops machine learning models to decode the intended meaning beh
 ## 📁 Project Structure
 
 ```
-dsf_project/
+BDA_VANITY/
 ├── data/                       # Processed datasets
 │   ├── cali.csv               # California DMV vanity plate applications
 │   ├── cali_v2.csv            # Enhanced version with additional processing
@@ -63,7 +63,7 @@ dsf_project/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd dsf_project
+   cd BDA_VANITY
    ```
 
 2. **Create virtual environment**

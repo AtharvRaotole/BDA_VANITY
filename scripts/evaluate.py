@@ -30,7 +30,7 @@ Usage:
     # With OpenAI
     python evaluate.py --predictions outputs/predictions.csv --llm-judge --openai-key YOUR_KEY
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

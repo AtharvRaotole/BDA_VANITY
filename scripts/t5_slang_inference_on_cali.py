@@ -10,7 +10,7 @@ to understanding vanity plate meanings.
 Usage:
     python t5_slang_inference_on_cali.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 

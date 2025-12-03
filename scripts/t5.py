@@ -17,7 +17,7 @@ Features:
 Usage:
     python t5.py
 
-Author: DSF Project Team
+Author: AMS 560
 Last Updated: December 2025
 """
 
