@@ -1,0 +1,278 @@
+#!/bin/bash
+#=============================================================================
+# FOOLPROOF SLURM JOB SCRIPT FOR FLAN-T5 TRAINING
+#=============================================================================
+# This script handles all edge cases and provides clear error messages.
+# 
+# Usage:
+#   sbatch train_flan_t5.job                    # Default: flan-t5-base
+#   sbatch train_flan_t5.job --export=MODEL=google/flan-t5-small
+#   sbatch train_flan_t5.job --export=MODEL=google/flan-t5-large,BATCH_SIZE=2
+#
+# Monitor job:
+#   squeue -u $USER                             # Check job status
+#   tail -f slurm_logs/flan_t5_train_*.out      # Watch output
+#   scancel <job_id>                            # Cancel job
+#=============================================================================
+
+#SBATCH --job-name=flan_t5_vanity
+#SBATCH --output=../slurm_logs/flan_t5_train_%j.out
+#SBATCH --error=../slurm_logs/flan_t5_train_%j.err
+#SBATCH --time=24:00:00
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=4
+#SBATCH --mail-type=BEGIN,END,FAIL
+# Uncomment and set your email if you want notifications:
+# #SBATCH --mail-user=your_email@university.edu
+
+#=============================================================================
+# CONFIGURABLE PARAMETERS (can be overridden via --export)
+#=============================================================================
+MODEL="${MODEL:-google/flan-t5-base}"           # Model to train
+BATCH_SIZE="${BATCH_SIZE:-8}"                    # Batch size
+EPOCHS="${EPOCHS:-20}"                           # Max epochs
+LR="${LR:-5e-5}"                                 # Learning rate
+PATIENCE="${PATIENCE:-5}"                        # Early stopping patience
+DATA_FILE="${DATA_FILE:-cali.csv}"               # Dataset file
+USE_AMP="${USE_AMP:-true}"                       # Use mixed precision
+
+#=============================================================================
+# ENVIRONMENT SETUP
+#=============================================================================
+
+# Exit on any error
+set -e
+
+# Get absolute paths (works regardless of where sbatch is called from)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Print header
+echo "============================================================================="
+echo "  FLAN-T5 VANITY PLATE TRAINING"
+echo "============================================================================="
+echo "Job ID:        $SLURM_JOB_ID"
+echo "Job Name:      $SLURM_JOB_NAME"
+echo "Node:          $(hostname)"
+echo "Date:          $(date)"
+echo "Working Dir:   $PROJECT_DIR"
+echo "============================================================================="
+echo "Configuration:"
+echo "  Model:       $MODEL"
+echo "  Batch Size:  $BATCH_SIZE"
+echo "  Epochs:      $EPOCHS"
+echo "  LR:          $LR"
+echo "  Patience:    $PATIENCE"
+echo "  Data File:   $DATA_FILE"
+echo "  Use AMP:     $USE_AMP"
+echo "============================================================================="
+
+# Change to project directory
+cd "$PROJECT_DIR"
+
+#=============================================================================
+# MODULE LOADING (Cluster-specific - uncomment/modify as needed)
+#=============================================================================
+
+echo ""
+echo "[1/6] Loading modules..."
+
+# Try to load common module names (will fail silently if not found)
+module purge 2>/dev/null || true
+
+# Python module (try different common names)
+for PY_MODULE in "python/3.10" "python/3.11" "python/3.9" "python3" "python"; do
+    if module load "$PY_MODULE" 2>/dev/null; then
+        echo "  ✓ Loaded $PY_MODULE"
+        break
+    fi
+done
+
+# CUDA module (try different common versions)
+for CUDA_MODULE in "cuda/11.8" "cuda/11.7" "cuda/12.0" "cuda/12.1" "cuda" "cudatoolkit"; do
+    if module load "$CUDA_MODULE" 2>/dev/null; then
+        echo "  ✓ Loaded $CUDA_MODULE"
+        break
+    fi
+done
+
+# cuDNN (some clusters require this)
+module load cudnn 2>/dev/null && echo "  ✓ Loaded cudnn" || true
+
+echo "  Loaded modules:"
+module list 2>&1 | head -10 || true
+
+#=============================================================================
+# VIRTUAL ENVIRONMENT ACTIVATION
+#=============================================================================
+
+echo ""
+echo "[2/6] Activating virtual environment..."
+
+# Try multiple possible venv locations
+VENV_PATHS=(
+    "$PROJECT_DIR/.venv"
+    "$PROJECT_DIR/venv"
+    "$PROJECT_DIR/myenv"
+    "$HOME/venvs/bda_vanity"
+)
+
+VENV_ACTIVATED=false
+for VENV_PATH in "${VENV_PATHS[@]}"; do
+    if [ -f "$VENV_PATH/bin/activate" ]; then
+        echo "  Found venv at: $VENV_PATH"
+        source "$VENV_PATH/bin/activate"
+        VENV_ACTIVATED=true
+        echo "  ✓ Activated virtual environment"
+        break
+    fi
+done
+
+# If no venv found, try to create one
+if [ "$VENV_ACTIVATED" = false ]; then
+    echo "  ⚠ No virtual environment found. Creating one..."
+    python3 -m venv "$PROJECT_DIR/venv"
+    source "$PROJECT_DIR/venv/bin/activate"
+    echo "  ✓ Created and activated new venv at: $PROJECT_DIR/venv"
+    
+    echo "  Installing requirements..."
+    pip install --upgrade pip
+    pip install -r "$PROJECT_DIR/requirements.txt"
+    echo "  ✓ Requirements installed"
+fi
+
+echo "  Python: $(which python)"
+echo "  Version: $(python --version)"
+
+#=============================================================================
+# VERIFY DEPENDENCIES
+#=============================================================================
+
+echo ""
+echo "[3/6] Verifying dependencies..."
+
+# Check for required packages
+REQUIRED_PACKAGES=("torch" "transformers" "pandas" "sklearn" "tqdm")
+MISSING_PACKAGES=()
+
+for pkg in "${REQUIRED_PACKAGES[@]}"; do
+    if ! python -c "import $pkg" 2>/dev/null; then
+        MISSING_PACKAGES+=("$pkg")
+    fi
+done
+
+if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+    echo "  ⚠ Missing packages: ${MISSING_PACKAGES[*]}"
+    echo "  Installing requirements..."
+    pip install -r "$PROJECT_DIR/requirements.txt"
+else
+    echo "  ✓ All required packages installed"
+fi
+
+#=============================================================================
+# GPU CHECK
+#=============================================================================
+
+echo ""
+echo "[4/6] Checking GPU availability..."
+
+if command -v nvidia-smi &> /dev/null; then
+    echo "  GPU Information:"
+    nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader | sed 's/^/    /'
+    echo ""
+    
+    # Verify PyTorch can see the GPU
+    GPU_CHECK=$(python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}, Devices: {torch.cuda.device_count()}')")
+    echo "  PyTorch: $GPU_CHECK"
+    
+    if ! python -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
+        echo "  ⚠ WARNING: PyTorch cannot see GPU. Training will be slow on CPU."
+    else
+        echo "  ✓ GPU ready for training"
+    fi
+else
+    echo "  ⚠ nvidia-smi not found. GPU may not be available."
+fi
+
+#=============================================================================
+# VERIFY DATA
+#=============================================================================
+
+echo ""
+echo "[5/6] Verifying data files..."
+
+DATA_PATH="$PROJECT_DIR/data/$DATA_FILE"
+if [ -f "$DATA_PATH" ]; then
+    LINES=$(wc -l < "$DATA_PATH")
+    echo "  ✓ Found $DATA_FILE with $LINES lines"
+else
+    echo "  ✗ ERROR: Data file not found: $DATA_PATH"
+    echo "  Available files in data/:"
+    ls -la "$PROJECT_DIR/data/" 2>/dev/null | sed 's/^/    /'
+    exit 1
+fi
+
+#=============================================================================
+# CREATE OUTPUT DIRECTORIES
+#=============================================================================
+
+mkdir -p "$PROJECT_DIR/slurm_logs"
+mkdir -p "$PROJECT_DIR/model_checkpoints"
+mkdir -p "$PROJECT_DIR/outputs"
+mkdir -p "$PROJECT_DIR/logs"
+echo "  ✓ Output directories verified"
+
+#=============================================================================
+# RUN TRAINING
+#=============================================================================
+
+echo ""
+echo "[6/6] Starting training..."
+echo "============================================================================="
+echo ""
+
+# Build command
+CMD="python scripts/train.py"
+CMD="$CMD --model $MODEL"
+CMD="$CMD --batch_size $BATCH_SIZE"
+CMD="$CMD --epochs $EPOCHS"
+CMD="$CMD --lr $LR"
+CMD="$CMD --patience $PATIENCE"
+CMD="$CMD --data_file $DATA_FILE"
+
+if [ "$USE_AMP" = "true" ]; then
+    CMD="$CMD --use-amp"
+fi
+
+echo "Command: $CMD"
+echo ""
+
+# Run training with error handling
+if $CMD; then
+    EXIT_CODE=0
+    echo ""
+    echo "============================================================================="
+    echo "  ✓ TRAINING COMPLETED SUCCESSFULLY"
+    echo "============================================================================="
+else
+    EXIT_CODE=$?
+    echo ""
+    echo "============================================================================="
+    echo "  ✗ TRAINING FAILED WITH EXIT CODE: $EXIT_CODE"
+    echo "============================================================================="
+fi
+
+# Print summary
+echo ""
+echo "Job finished at: $(date)"
+echo "Total runtime: $SECONDS seconds"
+echo ""
+echo "Output files:"
+echo "  Logs:        $PROJECT_DIR/logs/"
+echo "  Models:      $PROJECT_DIR/model_checkpoints/"
+echo "  Predictions: $PROJECT_DIR/outputs/"
+echo "  SLURM out:   $PROJECT_DIR/slurm_logs/flan_t5_train_${SLURM_JOB_ID}.out"
+echo "  SLURM err:   $PROJECT_DIR/slurm_logs/flan_t5_train_${SLURM_JOB_ID}.err"
+
+exit $EXIT_CODE

@@ -18,8 +18,19 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Activate virtual environment
-source "${PROJECT_DIR}/myenv/bin/activate"
+# Activate virtual environment (try multiple locations)
+if [ -f "${PROJECT_DIR}/.venv/bin/activate" ]; then
+    source "${PROJECT_DIR}/.venv/bin/activate"
+elif [ -f "${PROJECT_DIR}/venv/bin/activate" ]; then
+    source "${PROJECT_DIR}/venv/bin/activate"
+elif [ -f "${PROJECT_DIR}/myenv/bin/activate" ]; then
+    source "${PROJECT_DIR}/myenv/bin/activate"
+else
+    echo "ERROR: No virtual environment found!"
+    exit 1
+fi
+
+echo "Using Python: $(which python)"
 
 # Run the training script
 python3 "${SCRIPT_DIR}/t5_v2_llama_rc.py"
