@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --job-name=modern_model_train
+#SBATCH --output=../slurm_logs/modern_model_%j.txt
+#SBATCH --error=../slurm_logs/modern_model_err_%j.txt
+#SBATCH --time=24:00:00
+#SBATCH --mem=32000
+#SBATCH --gres=gpu:1
+
+# =============================================================================
+# Modern Model Training Job
+# =============================================================================
+# Supports: flan-t5-small, flan-t5-base, flan-t5-large, bart-base, etc.
+#
+# To change model, modify the MODEL variable below:
+# =============================================================================
+
+MODEL="flan-t5-base"    # Change this to your preferred model
+EPOCHS=20
+BATCH_SIZE=8
+LR=5e-5
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Activate environment
+source "${PROJECT_DIR}/myenv/bin/activate"
+
+# Run training
+python3 "${SCRIPT_DIR}/train_modern.py" \
+    --model "$MODEL" \
+    --epochs "$EPOCHS" \
+    --batch_size "$BATCH_SIZE" \
+    --lr "$LR"
+

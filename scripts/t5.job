@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=t5_vanity_plate
+#SBATCH --output=../slurm_logs/t5_vanity_plate_out_%j.txt
+#SBATCH --error=../slurm_logs/t5_vanity_plate_err_%j.txt
+#SBATCH --time=20:00:00
+#SBATCH --mem=50000
+#SBATCH --gres=gpu:1
+
+# =============================================================================
+# T5 Vanity Plate Training Job
+# -----------------------------------------------------------------------------
+# Description: Fine-tunes T5-large model on vanity license plate interpretation
+# Dataset: California DMV vanity plate applications (cali.csv)
+# Output: Trained model checkpoint in model_checkpoints/
+# =============================================================================
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Activate virtual environment
+source "${PROJECT_DIR}/myenv/bin/activate"
+
+# Run the training script
+python3 "${SCRIPT_DIR}/t5.py"

@@ -1,0 +1,72 @@
+#!/bin/bash
+#SBATCH --job-name=vanity_plate_eval
+#SBATCH --output=../slurm_logs/eval_%j.out
+#SBATCH --error=../slurm_logs/eval_%j.err
+#SBATCH --time=4:00:00
+#SBATCH --mem=16G
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=2
+
+# =============================================================================
+# Vanity Plate Evaluation Job
+# =============================================================================
+# Supports:
+#   - Traditional metrics (BLEU, ROUGE, Cosine Similarity)
+#   - LLM-as-a-Judge (Azure OpenAI, OpenAI, Ollama)
+# =============================================================================
+
+# Azure OpenAI Settings (for LLM-as-a-Judge)
+USE_LLM_JUDGE=false  # Set to true to enable
+AZURE_ENDPOINT="https://manav-mip8bl3j-eastus2.cognitiveservices.azure.com/"
+AZURE_KEY="YOUR_KEY_HERE"  # Replace with your actual key
+AZURE_DEPLOYMENT="gpt-5.1-chat"  # Your deployment name in Azure
+LLM_SAMPLES=100
+
+echo "=================================================="
+echo "Starting Vanity Plate Evaluation"
+echo "=================================================="
+echo "Job ID: $SLURM_JOB_ID"
+echo "Host: $(hostname)"
+echo "Date: $(date)"
+echo "=================================================="
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_DIR"
+source venv/bin/activate
+
+# Find latest predictions file
+PRED_FILE=$(ls -t outputs/predictions_*.csv 2>/dev/null | head -1)
+
+if [ -z "$PRED_FILE" ]; then
+    echo "❌ No predictions file found in outputs/"
+    exit 1
+fi
+
+echo "Evaluating: $PRED_FILE"
+echo ""
+
+# Run evaluation
+if [ "$USE_LLM_JUDGE" = true ]; then
+    echo "Running with LLM-as-a-Judge (Azure OpenAI)..."
+    python scripts/evaluate.py \
+        --predictions "$PRED_FILE" \
+        --llm-judge \
+        --azure \
+        --azure-endpoint "$AZURE_ENDPOINT" \
+        --azure-key "$AZURE_KEY" \
+        --azure-deployment "$AZURE_DEPLOYMENT" \
+        --llm-samples "$LLM_SAMPLES"
+else
+    echo "Running traditional metrics only..."
+    python scripts/evaluate.py \
+        --predictions "$PRED_FILE"
+fi
+
+echo ""
+echo "=================================================="
+echo "Evaluation finished at $(date)"
+echo "=================================================="
+

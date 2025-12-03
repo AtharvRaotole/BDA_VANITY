@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=t5_slang_finetune
+#SBATCH --output=../slurm_logs/t5_slang_finetune_out_%j.txt
+#SBATCH --error=../slurm_logs/t5_slang_finetune_err_%j.txt
+#SBATCH --time=20:00:00
+#SBATCH --mem=50000
+#SBATCH --gres=gpu:1
+
+# =============================================================================
+# T5 Slang Definition Fine-tuning Job
+# -----------------------------------------------------------------------------
+# Description: Fine-tunes T5-large to translate slang words to definitions
+# Dataset: Urban Dictionary word definitions (urbandict-word-defs.csv)
+# Output: Trained model checkpoint in model_checkpoints/
+# =============================================================================
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Activate virtual environment
+source "${PROJECT_DIR}/myenv/bin/activate"
+
+# Run the training script
+python3 "${SCRIPT_DIR}/t5_ft_slang.py"

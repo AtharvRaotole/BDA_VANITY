@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=t5_vanity_plate_llama_rc
+#SBATCH --output=../slurm_logs/t5_vanity_plate_llama_rc_out_%j.txt
+#SBATCH --error=../slurm_logs/t5_vanity_plate_llama_rc_err_%j.txt
+#SBATCH --time=40:00:00
+#SBATCH --mem=50000
+#SBATCH --gres=gpu:1
+
+# =============================================================================
+# T5 Vanity Plate Training Job (LLaMA-enhanced)
+# -----------------------------------------------------------------------------
+# Description: Fine-tunes T5-large on vanity plates with LLaMA-generated meanings
+# Dataset: California vanity plates with LLaMA reviewer comments (cali_v2_llama_rc.csv)
+# Output: Trained model checkpoint in model_checkpoints/
+# =============================================================================
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Activate virtual environment
+source "${PROJECT_DIR}/myenv/bin/activate"
+
+# Run the training script
+python3 "${SCRIPT_DIR}/t5_v2_llama_rc.py"

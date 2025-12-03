@@ -1,0 +1,75 @@
+# =============================================================================
+# Vanity Plate Interpretation Project - Git Ignore
+# =============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# Virtual Environment
+myenv/
+venv/
+ENV/
+env/
+.venv/
+
+# Model Checkpoints (large binary files)
+model_checkpoints/*
+!model_checkpoints/.gitkeep
+
+# Training Outputs
+outputs/*
+!outputs/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+slurm_logs/*
+!slurm_logs/.gitkeep
+
+# Results/Checkpoints
+results/*
+!results/.gitkeep
+
+# Evaluations
+evaluations/*
+!evaluations/.gitkeep
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large Data Files (uncomment if needed)
+# data/*.csv
+# data_dirs/
+
+# API Keys
+.env
+*.env
+secrets.json
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+

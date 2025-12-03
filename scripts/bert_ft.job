@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=bert_slang_finetune
+#SBATCH --output=../slurm_logs/bert_slang_finetune_out_%j.txt
+#SBATCH --error=../slurm_logs/bert_slang_finetune_err_%j.txt
+#SBATCH --time=40:00:00
+#SBATCH --mem=50000
+#SBATCH --gres=gpu:1
+
+# =============================================================================
+# BERT Slang Embedding Fine-tuning Job
+# -----------------------------------------------------------------------------
+# Description: Fine-tunes BERT for slang word embedding generation
+# Dataset: Urban Dictionary word definitions (urbandict-word-defs.csv)
+# Output: Trained model checkpoint in model_checkpoints/
+# =============================================================================
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Activate virtual environment
+source "${PROJECT_DIR}/myenv/bin/activate"
+
+# Run the training script
+python3 "${SCRIPT_DIR}/bert_ft.py"

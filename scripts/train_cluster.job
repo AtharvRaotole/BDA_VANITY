@@ -1,0 +1,61 @@
+#!/bin/bash
+#SBATCH --job-name=vanity_plate_train
+#SBATCH --output=../slurm_logs/train_%j.out
+#SBATCH --error=../slurm_logs/train_%j.err
+#SBATCH --time=24:00:00
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=4
+
+# =============================================================================
+# Vanity Plate Training Job - Flan-T5
+# =============================================================================
+# Model options:
+#   google/flan-t5-small   (80M params, fastest)
+#   google/flan-t5-base    (250M params, recommended)
+#   google/flan-t5-large   (780M params, best quality)
+# =============================================================================
+
+MODEL="google/flan-t5-base"
+BATCH_SIZE=8
+EPOCHS=20
+LR=5e-5
+DATA_FILE="cali.csv"
+
+echo "=================================================="
+echo "Starting Vanity Plate Training"
+echo "=================================================="
+echo "Job ID: $SLURM_JOB_ID"
+echo "Host: $(hostname)"
+echo "Date: $(date)"
+echo "Model: $MODEL"
+echo "=================================================="
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_DIR"
+
+# Activate environment
+source venv/bin/activate
+
+# Check GPU
+echo ""
+echo "GPU Information:"
+nvidia-smi
+echo ""
+
+# Run training
+python scripts/train.py \
+    --model "$MODEL" \
+    --batch_size "$BATCH_SIZE" \
+    --epochs "$EPOCHS" \
+    --lr "$LR" \
+    --data_file "$DATA_FILE"
+
+echo ""
+echo "=================================================="
+echo "Job finished at $(date)"
+echo "=================================================="
+
