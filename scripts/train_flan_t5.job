@@ -36,6 +36,9 @@ LR="${LR:-5e-5}"                                 # Learning rate
 PATIENCE="${PATIENCE:-5}"                        # Early stopping patience
 DATA_FILE="${DATA_FILE:-cali.csv}"               # Dataset file
 USE_AMP="${USE_AMP:-true}"                       # Use mixed precision
+# GPU selection (index on the node). If your cluster assigns GPUs 0..N-1,
+# set GPU_ID to the index you want. If unset, the scheduler will pick.
+GPU_ID="${GPU_ID:-}"                              # e.g. 3 to use GPU device 3
 
 #=============================================================================
 # ENVIRONMENT SETUP
@@ -244,19 +247,32 @@ CMD="$CMD --data_file $DATA_FILE"
 if [ "$USE_AMP" = "true" ]; then
     CMD="$CMD --use-amp"
 fi
-
 echo "Command: $CMD"
 echo ""
 
+# If GPU_ID is set, export CUDA_VISIBLE_DEVICES so the job uses the requested GPU index
+if [ -n "$GPU_ID" ]; then
+    echo "  → User requested GPU_ID=$GPU_ID"
+    export CUDA_VISIBLE_DEVICES=$GPU_ID
+    echo "  → Set CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+else
+    echo "  → No GPU_ID requested; using the GPU assigned by the scheduler"
+fi
+
 # Run training with error handling
-if $CMD; then
+set +e
+eval $CMD
+EXIT_STATUS=$?
+set -e
+
+if [ $EXIT_STATUS -eq 0 ]; then
     EXIT_CODE=0
     echo ""
     echo "============================================================================="
     echo "  ✓ TRAINING COMPLETED SUCCESSFULLY"
     echo "============================================================================="
 else
-    EXIT_CODE=$?
+    EXIT_CODE=$EXIT_STATUS
     echo ""
     echo "============================================================================="
     echo "  ✗ TRAINING FAILED WITH EXIT CODE: $EXIT_CODE"
